@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import Layout from '../components/layout';
-import Seo from '../components/seo';
-import Pagination from '../components/pagination';
-import * as style from '../styles/blog.module.scss';
-import {getAllBlogs, blogsPerPage} from '../utils/mdQueries';
+import Layout from '../../../components/layout';
+import Seo from '../../../components/seo';
+import Pagination from '../../../components/pagination';
+import * as style from '../../../styles/blog.module.scss';
+import {getAllBlogs, blogsPerPage} from '../../../utils/mdQueries';
 
 const Blog = ({blogs, numberPages}) => {
   return (
@@ -37,11 +37,25 @@ const Blog = ({blogs, numberPages}) => {
 
 export default Blog;
 
-export async function getStaticProps() {
-  const {orderedBlogs, numberPages} = await getAllBlogs();
-  const limitedBlogs = orderedBlogs.slice(0, blogsPerPage);
+export async function getStaticPaths() {
+  const {numberPages} = await getAllBlogs();
+
+  let paths = [];
+  Array.from({length: numberPages - 1}).forEach((_, i) => paths.push(`/blog/page/${i + 2}`));
 
   return {
-    props: {blogs: limitedBlogs, numberPages: numberPages},
+    paths: paths,
+    fallback: false,
+  };
+}
+
+export async function getStaticProps(context) {
+  const {orderedBlogs, numberPages} = await getAllBlogs();
+
+  const currentPage = context.params.pagination;
+  const limitedBlogs = orderedBlogs.slice((currentPage - 1) * blogsPerPage, currentPage * blogsPerPage);
+
+  return {
+    props: {blogs: limitedBlogs, numberPages},
   };
 }
